@@ -208,6 +208,7 @@ type Scraper struct {
 	Sync               []string
 	InsecureSkipVerify bool
 	TLS                bool
+	StartTLS           bool
 }
 
 func (s *Scraper) addReplicationQueries() {
@@ -253,9 +254,14 @@ func (s *Scraper) scrape() {
 		if s.InsecureSkipVerify {
 			tlsConfig.InsecureSkipVerify = true
 		}
+
 		conn, err = ldap.DialTLS(s.Net, s.Addr, tlsConfig)
-	case false:
+	default:
 		conn, err = ldap.Dial(s.Net, s.Addr)
+
+		if s.StartTLS {
+			err = conn.StartTLS(tlsConfig)
+		}
 	}
 
 	if err != nil {

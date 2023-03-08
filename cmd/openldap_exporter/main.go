@@ -29,6 +29,7 @@ const (
 	replicationObject = "replicationObject"
 	ldapTLS           = "ldapTLS"
 	TLSInsecure       = "TLSInsecure"
+	ldapStartTLS      = "ldapStartTLS"
 )
 
 func main() {
@@ -62,6 +63,12 @@ func main() {
 			Value:   false,
 			Usage:   "Use TLS",
 			EnvVars: []string{"LDAP_TLS"},
+		}),
+		altsrc.NewBoolFlag(&cli.BoolFlag{
+			Name:    ldapStartTLS,
+			Value:   false,
+			Usage:   "Use StartTLS",
+			EnvVars: []string{"LDAP_STARTTLS"},
 		}),
 		altsrc.NewBoolFlag(&cli.BoolFlag{
 			Name:    TLSInsecure,
@@ -152,6 +159,7 @@ func runMain(c *cli.Context) error {
 		Tick:               c.Duration(interval),
 		Sync:               c.StringSlice(replicationObject),
 		TLS:                c.Bool(ldapTLS),
+		StartTLS:           c.Bool(ldapStartTLS),
 		InsecureSkipVerify: c.Bool(TLSInsecure),
 	}
 
