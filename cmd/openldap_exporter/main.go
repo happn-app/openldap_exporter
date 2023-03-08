@@ -27,6 +27,9 @@ const (
 	webCfgFile        = "webCfgFile"
 	config            = "config"
 	replicationObject = "replicationObject"
+	ldapTLS           = "ldapTLS"
+	TLSInsecure       = "TLSInsecure"
+	ldapStartTLS      = "ldapStartTLS"
 )
 
 func main() {
@@ -54,6 +57,24 @@ func main() {
 			Value:   "localhost:389",
 			Usage:   "Address and port of OpenLDAP server",
 			EnvVars: []string{"LDAP_ADDR"},
+		}),
+		altsrc.NewBoolFlag(&cli.BoolFlag{
+			Name:    ldapTLS,
+			Value:   false,
+			Usage:   "Use TLS",
+			EnvVars: []string{"LDAP_TLS"},
+		}),
+		altsrc.NewBoolFlag(&cli.BoolFlag{
+			Name:    ldapStartTLS,
+			Value:   false,
+			Usage:   "Use StartTLS",
+			EnvVars: []string{"LDAP_STARTTLS"},
+		}),
+		altsrc.NewBoolFlag(&cli.BoolFlag{
+			Name:    TLSInsecure,
+			Value:   false,
+			Usage:   "Skip server name verification",
+			EnvVars: []string{"LDAP_TLS_INSECURE"},
 		}),
 		altsrc.NewStringFlag(&cli.StringFlag{
 			Name:    ldapUser,
@@ -131,12 +152,15 @@ func runMain(c *cli.Context) error {
 	)
 
 	scraper := &exporter.Scraper{
-		Net:  c.String(ldapNet),
-		Addr: c.String(ldapAddr),
-		User: c.String(ldapUser),
-		Pass: c.String(ldapPass),
-		Tick: c.Duration(interval),
-		Sync: c.StringSlice(replicationObject),
+		Net:                c.String(ldapNet),
+		Addr:               c.String(ldapAddr),
+		User:               c.String(ldapUser),
+		Pass:               c.String(ldapPass),
+		Tick:               c.Duration(interval),
+		Sync:               c.StringSlice(replicationObject),
+		TLS:                c.Bool(ldapTLS),
+		StartTLS:           c.Bool(ldapStartTLS),
+		InsecureSkipVerify: c.Bool(TLSInsecure),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
