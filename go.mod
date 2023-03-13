@@ -1,4 +1,4 @@
-module github.com/tomcz/openldap_exporter
+module github.com/morphalus/openldap_exporter
 
 go 1.18
 
