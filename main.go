@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	log "log/slog"
@@ -37,6 +38,9 @@ const (
 	webCfgFile        = "webCfgFile"
 	config            = "config"
 	replicationObject = "replicationObject"
+	ldapTLS           = "ldapTLS"
+	TLSInsecure       = "TLSInsecure"
+	ldapStartTLS      = "ldapStartTLS"
 )
 
 var showStop bool
@@ -98,6 +102,24 @@ func main() {
 			Name:  replicationObject,
 			Usage: "Object to watch replication upon",
 		}),
+		altsrc.NewBoolFlag(&cli.BoolFlag{
+			Name:    ldapTLS,
+			Value:   false,
+			Usage:   "Use TLS",
+			EnvVars: []string{"LDAP_TLS"},
+		}),
+		altsrc.NewBoolFlag(&cli.BoolFlag{
+			Name:    ldapStartTLS,
+			Value:   false,
+			Usage:   "Use StartTLS",
+			EnvVars: []string{"LDAP_STARTTLS"},
+		}),
+		altsrc.NewBoolFlag(&cli.BoolFlag{
+			Name:    TLSInsecure,
+			Value:   false,
+			Usage:   "Skip server name verification",
+			EnvVars: []string{"LDAP_TLS_INSECURE"},
+		}),
 		&cli.StringFlag{
 			Name:  config,
 			Usage: "Optional configuration from a `YAML_FILE`",
@@ -153,6 +175,9 @@ func runMain(c *cli.Context) error {
 		Pass: c.String(ldapPass),
 		Tick: c.Duration(interval),
 		Sync: c.StringSlice(replicationObject),
+		TLS:                c.Bool(ldapTLS),
+		StartTLS:           c.Bool(ldapStartTLS),
+		InsecureSkipVerify: c.Bool(TLSInsecure),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -346,6 +371,9 @@ type Scraper struct {
 	LdapSync []string
 	log      *log.Logger
 	Sync     []string
+	InsecureSkipVerify bool
+	TLS                bool
+	StartTLS           bool
 }
 
 func (s *Scraper) Start(ctx context.Context) {
@@ -415,7 +443,26 @@ func (s *Scraper) setReplicationValue(entries []*ldap.Entry, q *query) {
 }
 
 func (s *Scraper) scrape() {
-	conn, err := ldap.Dial(s.Net, s.Addr)
+	var conn *ldap.Conn
+	var err error
+
+	tlsConfig := &tls.Config{
+		ServerName: strings.Split(s.Addr, ":")[0],
+	}
+	switch s.TLS {
+	case true:
+		if s.InsecureSkipVerify {
+			tlsConfig.InsecureSkipVerify = true
+		}
+
+		conn, err = ldap.DialTLS(s.Net, s.Addr, tlsConfig)
+	default:
+		conn, err = ldap.Dial(s.Net, s.Addr)
+
+		if s.StartTLS {
+			err = conn.StartTLS(tlsConfig)
+		}
+	}
 	if err != nil {
 		s.log.Error("dial failed")
 		dialCounter.WithLabelValues("fail").Inc()

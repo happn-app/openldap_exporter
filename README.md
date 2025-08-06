@@ -1,8 +1,3 @@
-> [!IMPORTANT]
-> This repository is now archived.  
-> Thank you all for your excellent contributions.  
-> May it continue to live in all your wonderful forks.
-
 # OpenLDAP Prometheus Exporter
 
 This is a simple service that scrapes metrics from OpenLDAP and exports them via HTTP for Prometheus consumption.
@@ -15,7 +10,7 @@ _slapd_ supports an optional LDAP monitoring interface you can use to obtain inf
 
 To enable the backend add the following to the bottom of your `slapd.conf` file:
 
-```
+```ldif
 database monitor
 rootdn "cn=monitoring,cn=Monitor"
 rootpw YOUR_MONITORING_ROOT_PASSWORD
@@ -25,13 +20,13 @@ Technically you don't need `rootdn` or `rootpw`, but having unauthenticated acce
 
 You may need to also load the monitoring backend module if your _slapd_ installation needs to load backends as modules by adding this to your `slapd.conf`:
 
-```
+```ldif
 moduleload  back_monitor
 ```
 
 Once you've built the exporter (see below), or downloaded the [latest release](https://github.com/tomcz/openldap_exporter/releases), you can install it on the same server as your _slapd_ instance, and run it as a service. You can then configure Prometheus to pull metrics from the exporter's `/metrics` endpoint on port 9330, and check to see that it is working via curl:
 
-```
+```sh
 $> curl -s http://localhost:9330/metrics
 ...
 # HELP openldap_monitor_counter_object cn=Monitor (objectClass=monitorCounterObject) monitorCounter
@@ -84,7 +79,7 @@ The precedence of these configuration sources is as follows (from the highest to
 3. YAML configuration file parameters
 4. Default values
 
-```
+```sh
 NAME:
    openldap_exporter - Export OpenLDAP metrics to Prometheus
 
@@ -112,7 +107,7 @@ GLOBAL OPTIONS:
 
 Example:
 
-```
+```sh
 INTERVAL=10s /usr/sbin/openldap_exporter --promAddr ":8080" --config /etc/slapd/exporter.yaml
 ```
 
