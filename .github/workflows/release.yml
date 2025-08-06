@@ -1,3 +1,4 @@
+---
 name: "tagged-release"
 
 on:
@@ -10,9 +11,9 @@ jobs:
     name: "Tagged Release"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v3
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: '1.22'
       - name: golangci-lint
