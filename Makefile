@@ -1,12 +1,15 @@
 GITCOMMIT := $(shell git rev-parse --short HEAD 2>/dev/null)
 GIT_TAG := $(shell git describe --tags 2>/dev/null)
 
-LDFLAGS := -s -w -X github.com/morphalus/openldap_exporter.commit=${GITCOMMIT}
-LDFLAGS := ${LDFLAGS} -X github.com/morphalus/openldap_exporter.tag=${GIT_TAG}
+LDFLAGS := -s -w -X main.commit=${GITCOMMIT}
+LDFLAGS := ${LDFLAGS} -X main.tag=${GIT_TAG}
 OUTFILE ?= openldap_exporter
 
 .PHONY: precommit
 precommit: clean format lint compile
+
+.PHONY: build
+build: clean compile
 
 .PHONY: commit
 commit: clean cross-compile
@@ -21,23 +24,15 @@ target:
 
 .PHONY: format
 format:
-ifeq (, $(shell which goimports))
-	go install golang.org/x/tools/cmd/goimports@latest
-endif
-	@echo "Running goimports ..."
-	@goimports -w -local github.com/morphalus/openldap_exporter $(shell find . -type f -name '*.go' | grep -v '/vendor/')
+	goimports -w main.go
 
 .PHONY: lint
 lint:
-ifeq (, $(shell which staticcheck))
-	go install honnef.co/go/tools/cmd/staticcheck@latest
-endif
-	@echo "Running staticcheck ..."
-	@staticcheck $(shell go list ./... | grep -v /vendor/)
+	golangci-lint run
 
 .PHONY: compile
 compile: target
-	go build -buildvcs=false -ldflags "${LDFLAGS}" -o target/${OUTFILE} ./cmd/openldap_exporter/...
+	go build -ldflags "${LDFLAGS}" -o target/${OUTFILE} main.go
 	gzip -c < target/${OUTFILE} > target/${OUTFILE}.gz
 
 .PHONY: cross-compile
