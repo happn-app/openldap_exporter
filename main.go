@@ -446,23 +446,33 @@ func (s *Scraper) scrape() {
 	var conn *ldap.Conn
 	var err error
 
+	var serverName = strings.Split(s.Addr, ":")[0];
+
 	tlsConfig := &tls.Config{
-		ServerName: strings.Split(s.Addr, ":")[0],
+		ServerName: serverName,
 	}
-	switch s.TLS {
-	case true:
+	log.With(
+		"component", "scraper",
+		"tls", s.TLS,
+		"insecure_skip_verify", s.InsecureSkipVerify,
+		"start_tls", s.StartTLS,
+		"server_name", serverName,
+		"address", s.Addr,
+		"network", s.Net,
+		"user", s.User,
+	).Info("LDAP connection options")
+	if s.TLS {
 		if s.InsecureSkipVerify {
 			tlsConfig.InsecureSkipVerify = true
 		}
-
 		conn, err = ldap.DialTLS(s.Net, s.Addr, tlsConfig)
-	default:
+	} else {
 		conn, err = ldap.Dial(s.Net, s.Addr)
-
 		if s.StartTLS {
 			err = conn.StartTLS(tlsConfig)
 		}
 	}
+
 	if err != nil {
 		s.log.Error("dial failed")
 		dialCounter.WithLabelValues("fail").Inc()
